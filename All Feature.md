@@ -216,12 +216,12 @@ Setiap tugas diformat dengan struktur standar di bawah ini agar rekan tim dapat 
 
 ### Alokasi Filipus (FE — 20% / 5 Task)
 
-- [ ] **FE-FLP-01: Halaman Struktur Organisasi Komunitas (`#/struktur`)**
+- [x] **FE-FLP-01: Halaman Struktur Organisasi Komunitas (`#/struktur`)**
   - **Assignee / PIC:** Filipus (FE)
-  - **Status:** `Belum Dimulai`
+  - **Status:** `Selesai`
   - **Target Selesai:** 2026-11-26
-  - **Tanggal Selesai:** -
-  - **Berkas Terkait:** `frontend/src/app/features/structure/structure.component.ts`
+  - **Tanggal Selesai:** 2026-11-24
+  - **Berkas Terkait:** [structure.component.ts](file:///c:/Users/HP/Desktop/SARGA-WEB-MOCKUP/frontend/src/app/features/structure/structure.component.ts)
   - **Catatan Teknis:** Visualisasi kartu daftar pengurus inti (Ketua, Sekretaris, Bendahara) dan anggota aktif beserta tautan langsung WhatsApp.
 
 - [ ] **FE-FLP-02: Halaman Papan Pengumuman Organisasi (`#/pengumuman`)**

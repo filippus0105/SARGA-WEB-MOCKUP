@@ -91,3 +91,30 @@ export interface LoanTransaction {
   item?: Item;
   borrower?: { id: string; fullName: string; waNumber: string };
 }
+
+export interface StructureMember {
+  id: string;
+  userId: string;
+  fullName: string;
+  waNumber: string;
+  position: string;
+  division: string | null;
+  role: Role;
+  joinedAt: string;
+}
+
+export interface StructureResponse {
+  success: boolean;
+  organization: Organization & { inviteCode?: string; inviteExpires?: string | null };
+  leaders: StructureMember[];
+  members: StructureMember[];
+  message?: string;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  author?: { id: string; fullName: string };
+}
