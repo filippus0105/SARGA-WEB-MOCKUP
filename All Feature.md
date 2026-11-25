@@ -172,43 +172,43 @@ Setiap tugas diformat dengan struktur standar di bawah ini agar rekan tim dapat 
   - **Berkas Terkait:** [my-items.component.ts](file:///c:/Users/wilda/SARGA-WEB-MOCKUP/frontend/src/app/features/items/my-items.component.ts)
   - **Catatan Teknis:** Daftar alat pribadi, penanganan permohonan pinjaman masuk dari anggota lain, aksi setujui/tolak langsung, serta fitur tarik/arsipkan barang (`archive-item` & `restore-item`).
 
-- [ ] **FE-WLD-16: Halaman Ubah Data Barang (`#/edit-barang`)**
+- [x] **FE-WLD-16: Halaman Ubah Data Barang (`#/edit-barang`)**
   - **Assignee / PIC:** Wildan (FE)
-  - **Status:** `Belum Dimulai`
+  - **Status:** `Selesai`
   - **Target Selesai:** 2026-11-29
-  - **Tanggal Selesai:** -
+  - **Tanggal Selesai:** 2026-11-25
   - **Berkas Terkait:** `frontend/src/app/features/items/item-edit.component.ts`
   - **Catatan Teknis:** Pembaruan informasi barang, kelengkapan, dan status alat oleh pemilik atau pengurus.
 
-- [ ] **FE-WLD-17: Halaman Monitoring Sirkulasi Terpusat (`#/admin-monitoring`)**
+- [x] **FE-WLD-17: Halaman Monitoring Sirkulasi Terpusat (`#/admin-monitoring`)**
   - **Assignee / PIC:** Wildan (FE)
-  - **Status:** `Belum Dimulai`
+  - **Status:** `Selesai`
   - **Target Selesai:** 2026-11-30
-  - **Tanggal Selesai:** -
+  - **Tanggal Selesai:** 2026-11-25
   - **Berkas Terkait:** `frontend/src/app/features/admin/monitoring.component.ts`
   - **Catatan Teknis:** Strip metrik statistik (Total, Menunggu, Berjalan, Terlambat), pencarian sirkulasi, dan tabel transaksi komprehensif.
 
-- [ ] **FE-WLD-18: Pusat Verifikasi Calon Anggota & Modal Dokumen Penuh (`#/admin-verifikasi`)**
+- [x] **FE-WLD-18: Pusat Verifikasi Calon Anggota & Modal Dokumen Penuh (`#/admin-verifikasi`)**
   - **Assignee / PIC:** Wildan (FE)
-  - **Status:** `Belum Dimulai`
+  - **Status:** `Selesai`
   - **Target Selesai:** 2026-12-01
-  - **Tanggal Selesai:** -
+  - **Tanggal Selesai:** 2026-11-25
   - **Berkas Terkait:** `frontend/src/app/features/admin/verification.component.ts`, `member-doc-modal.component.ts`
   - **Catatan Teknis:** Kartu antrean pendaftar, tombol cek detail, tombol setujui/tolak, serta **Modal Pop-Up Resolusi Penuh Foto Dokumen Identitas KTP/KTA** lengkap dengan acuan pemeriksaan pengurus.
 
-- [ ] **FE-WLD-19: Manajemen Anggota Organisasi & Ubah Peran (`#/admin-anggota`)**
+- [x] **FE-WLD-19: Manajemen Anggota Organisasi & Ubah Peran (`#/admin-anggota`)**
   - **Assignee / PIC:** Wildan (FE)
-  - **Status:** `Belum Dimulai`
+  - **Status:** `Selesai`
   - **Target Selesai:** 2026-12-02
-  - **Tanggal Selesai:** -
+  - **Tanggal Selesai:** 2026-11-25
   - **Berkas Terkait:** `frontend/src/app/features/admin/members.component.ts`, `member-add.component.ts`
   - **Catatan Teknis:** Filter status anggota, pencarian, modal edit peran/jabatan, penambahan anggota manual oleh pengurus, dan proteksi pengurus tunggal.
 
-- [ ] **FE-WLD-20: Komponen Sensor & Watermark Dokumen Identitas (Canvas Pre-processing)**
+- [x] **FE-WLD-20: Komponen Sensor & Watermark Dokumen Identitas (Canvas Pre-processing)**
   - **Assignee / PIC:** Wildan (FE)
-  - **Status:** `Belum Dimulai`
+  - **Status:** `Selesai`
   - **Target Selesai:** 2026-12-03
-  - **Tanggal Selesai:** -
+  - **Tanggal Selesai:** 2026-11-25
   - **Berkas Terkait:** `frontend/src/app/shared/components/id-watermark-canvas/id-watermark-canvas.component.ts`
   - **Catatan Teknis:** Tool sensor redaksi hitam/blur pada NIK & tanda tangan, serta pembakaran watermark permanen melintang (nama organisasi, nama & kontak penanggung jawab, tanggal) sebelum dikirim ke backend.
 

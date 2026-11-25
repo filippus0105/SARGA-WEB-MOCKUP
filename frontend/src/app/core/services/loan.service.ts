@@ -59,7 +59,8 @@ export class LoanService {
     return this.http.patch<LoanResponse>(`${this.baseUrl}/${loanId}/cancel`, {});
   }
 
-  returnLoan(loanId: string): Observable<LoanResponse> {
-    return this.http.patch<LoanResponse>(`${this.baseUrl}/${loanId}/return`, {});
+  returnLoan(loanId: string, conditionNote?: string): Observable<LoanResponse> {
+    const body = conditionNote?.trim() ? { conditionNote: conditionNote.trim() } : {};
+    return this.http.patch<LoanResponse>(`${this.baseUrl}/${loanId}/return`, body);
   }
 }

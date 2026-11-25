@@ -72,6 +72,27 @@
         class="nav-item"
         (click)="menuOpen = false"
       >Gabung</a>
+      <a
+        *ngIf="authService.isAdmin() && authService.activeMembership()?.status === 'TERVERIFIKASI'"
+        routerLink="/admin-monitoring"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="menuOpen = false"
+      >Monitoring</a>
+      <a
+        *ngIf="authService.isAdmin() && authService.activeMembership()?.status === 'TERVERIFIKASI'"
+        routerLink="/admin-verifikasi"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="menuOpen = false"
+      >Verifikasi</a>
+      <a
+        *ngIf="authService.isAdmin() && authService.activeMembership()?.status === 'TERVERIFIKASI'"
+        routerLink="/admin-anggota"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="menuOpen = false"
+      >Anggota</a>
 
       <ng-container *ngIf="currentUser$ | async as user; else guestActions">
         <label class="organization-picker" *ngIf="user.memberships?.length; else noOrganization">

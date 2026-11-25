@@ -17,6 +17,10 @@ export interface RegisterRequest {
   fullName: string;
   address?: string;
   inviteCode: string;
+  documentType?: string;
+  documentUrl?: string;
+  documentName?: string;
+  documentNote?: string;
 }
 
 const KNOWN_DIRECTORY_ORGS: Organization[] = [

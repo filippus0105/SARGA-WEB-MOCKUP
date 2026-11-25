@@ -4,5 +4,7 @@
 @import './styles/tokens.css';
 @import './styles/base.css';
 @import './styles/sections.css';
+@import './styles/forms-tables.css';
 @import './styles/forms-modals.css';
+@import './styles/modals-verification.css';
 @import './styles/loans-detail.css';

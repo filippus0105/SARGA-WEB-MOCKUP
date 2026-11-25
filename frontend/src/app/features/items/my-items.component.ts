@@ -186,6 +186,9 @@ import { ToastService } from '../../shared/toast/toast.service';
                   <a class="btn-secondary btn-sm" [routerLink]="['/katalog', item.id]">
                     Lihat rincian
                   </a>
+                  <a class="btn-secondary btn-sm" [routerLink]="['/edit-barang', item.id]">
+                    Ubah
+                  </a>
                   <button
                     *ngIf="effectiveStatus(item) === 'DIARSIPKAN'; else archiveBtn"
                     class="btn-secondary btn-sm"
@@ -344,7 +347,7 @@ export class MyItemsComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.itemService.getItems().subscribe({
         next: itemsRes => {
-          const allItems = itemsRes.items || [];
+          const allItems = (itemsRes.items || []).map(item => this.itemService.getEffectiveItem(item));
           this.rawItems.set(allItems);
           const myItems = allItems.filter(item => item.ownerId === user.id);
 
@@ -430,7 +433,7 @@ export class MyItemsComponent implements OnInit, OnDestroy {
     if (this.itemService.isLocallyArchived(item.id)) {
       return 'DIARSIPKAN';
     }
-    return item.status;
+    return this.itemService.getEffectiveItem(item).status;
   }
 
   pendingCount(itemId: string): number {
