@@ -6,6 +6,7 @@ import { RegisterComponent } from './features/auth/register.component';
 import { ItemCreateComponent } from './features/items/item-create.component';
 import { StructureComponent } from './features/structure/structure.component';
 import { AnnouncementsComponent } from './features/announcements/announcements.component';
+import { ProfileComponent } from './features/profile/profile.component';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
@@ -29,6 +30,11 @@ export const routes: Routes = [
   {
     path: 'pengumuman',
     component: AnnouncementsComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'profil',
+    component: ProfileComponent,
     canActivate: [authGuard]
   },
   {

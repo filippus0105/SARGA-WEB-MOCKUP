@@ -232,13 +232,13 @@ Setiap tugas diformat dengan struktur standar di bawah ini agar rekan tim dapat 
   - **Berkas Terkait:** `frontend/src/app/features/announcements/announcements.component.ts`
   - **Catatan Teknis:** Tampilan daftar pengumuman berurut waktu, form tambah pengumuman (khusus pengurus), dan tombol hapus pengumuman. Dihubungkan ke GET/POST/DELETE `/announcements`; validasi judul 3-120 & isi 5-2000 karakter; hapus memakai dialog konfirmasi.
 
-- [ ] **FE-FLP-03: Halaman Profil Akun, Switcher Organisasi & Ganti Sandi (`#/profil`)**
+- [x] **FE-FLP-03: Halaman Profil Akun, Switcher Organisasi & Ganti Sandi (`#/profil`)**
   - **Assignee / PIC:** Filipus (FE)
-  - **Status:** `Belum Dimulai`
+  - **Status:** `Selesai`
   - **Target Selesai:** 2026-11-28
-  - **Tanggal Selesai:** -
+  - **Tanggal Selesai:** 2026-11-25
   - **Berkas Terkait:** `frontend/src/app/features/profile/profile.component.ts`
-  - **Catatan Teknis:** Data diri pengguna, tombol lihat dokumen pendaftaran saya (`openMyDocModal`), selector ganti organisasi aktif, dan form ubah kata sandi.
+  - **Catatan Teknis:** Data diri pengguna, tombol lihat dokumen pendaftaran saya (`openMyDocModal`), selector ganti organisasi aktif, dan form ubah kata sandi. Switcher organisasi memakai `setActiveOrg`. Ubah kata sandi baru divalidasi di sisi klien; endpoint server belum tersedia sehingga ditampilkan sebagai segera hadir. Dokumen pendaftaran tampil bila `documentUrl` tersedia.
 
 - [ ] **FE-FLP-04: Halaman Bagan & Penugasan Jabatan Pengurus (`#/admin-bagan`)**
   - **Assignee / PIC:** Filipus (FE)

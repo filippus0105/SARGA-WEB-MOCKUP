@@ -77,7 +77,7 @@
         </ng-template>
 
         <span class="role-label">Peran: {{ roleLabel }}</span>
-        <span class="user-greeting">Halo, {{ user.fullName }}</span>
+        <a routerLink="/profil" routerLinkActive="active" class="nav-item user-greeting" (click)="menuOpen = false">Halo, {{ user.fullName }}</a>
         <button type="button" (click)="onLogout()" class="btn-link">Keluar</button>
       </ng-container>
 
