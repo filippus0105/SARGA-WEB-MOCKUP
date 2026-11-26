@@ -1,0 +1,175 @@
+/* Mockup Loan, Stat Strip, Tabs, Definition List, Checkbox & Danger Button */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.65rem 1.15rem;
+  border: 1px solid var(--color-rose-border);
+  border-radius: var(--radius-input);
+  background: var(--color-rose-soft);
+  color: var(--color-rose-ink);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-rose-hover);
+  text-decoration: none;
+}
+.btn-danger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn-danger:focus-visible,
+.tab:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.btn-danger.btn-sm {
+  min-height: 32px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+}
+
+@media (min-width: 800px) {
+  .page-head.split {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+.head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.section-rule {
+  padding-top: 1.5rem;
+  margin-top: 2rem;
+  border-top: 1px solid var(--color-rule);
+}
+
+.stat-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.75rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--color-rule);
+  border-radius: 12px;
+  background: var(--color-paper-2);
+  margin-bottom: 1.25rem;
+}
+.stat {
+  min-width: 100px;
+}
+.stat-value {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-ink);
+}
+.stat-label {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-rule);
+  margin-bottom: 1.25rem;
+}
+.tab {
+  min-height: 44px;
+  padding: 0.55rem 0.85rem;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tab:hover {
+  color: var(--color-ink);
+  background: var(--color-paper-2);
+}
+.tab[aria-selected='true'] {
+  border-bottom-color: var(--color-accent);
+  color: var(--color-ink);
+}
+
+.item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.65rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-rule);
+}
+.definition-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+.definition-list div {
+  display: grid;
+  gap: 0.15rem;
+}
+.definition-list dt {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.definition-list dd {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-ink);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .form-grid.two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+textarea.form-input {
+  min-height: 96px;
+  resize: vertical;
+}
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--color-ink-2);
+  cursor: pointer;
+}
+.checkbox input {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  margin-top: 0.15rem;
+  accent-color: var(--color-accent);
+}
+.detail-photo {
+  border: 1px solid var(--color-rule);
+  border-radius: 12px;
+  background: var(--color-paper-3);
+}

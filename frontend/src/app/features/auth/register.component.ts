@@ -1,290 +1,210 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { WatermarkedDocumentOutput } from '../../core/models';
 import { AuthService } from '../../core/services/auth.service';
+import { MembershipService } from '../../core/services/membership.service';
 import { AlertComponent } from '../../shared/alert/alert.component';
+import { IdWatermarkCanvasComponent } from '../../shared/components/id-watermark-canvas/id-watermark-canvas.component';
+
+interface InvitePreset {
+  code: string;
+  name: string;
+  type: string;
+  contact: string;
+}
+
+interface InviteStatus {
+  kind: 'ok' | 'info' | 'warn';
+  title: string;
+  message: string;
+}
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, AlertComponent],
-  template: `
-    <div class="page-shell">
-      <section class="form-panel" aria-labelledby="register-title">
-        <h1 id="register-title">Daftar dan gabung organisasi</h1>
-        <p class="intro">
-          Buat akun menggunakan kode undangan organisasi. Keanggotaan baru menunggu verifikasi pengurus.
-        </p>
-
-        <app-alert
-          *ngIf="!successMessage"
-          kind="info"
-          title="Pendaftaran saat ini"
-          message="OTP WhatsApp dan unggah dokumen belum tersedia pada API. Pendaftaran tetap dikirim untuk menunggu verifikasi pengurus."
-        />
-        <app-alert
-          *ngIf="errorMessage"
-          kind="error"
-          title="Pendaftaran gagal"
-          [message]="errorMessage"
-        />
-        <app-alert
-          *ngIf="successMessage"
-          kind="success"
-          title="Pendaftaran berhasil"
-          [message]="successMessage"
-        />
-
-        <p *ngIf="loading" class="loading-message" role="status" aria-live="polite">
-          Mengirim data pendaftaran...
-        </p>
-
-        <form *ngIf="!successMessage" (ngSubmit)="onSubmit()" class="form-layout" [attr.aria-busy]="loading">
-          <div class="form-field">
-            <label for="register-full-name">Nama lengkap</label>
-            <input
-              id="register-full-name"
-              name="fullName"
-              type="text"
-              autocomplete="name"
-              required
-              [(ngModel)]="form.fullName"
-            />
-          </div>
-
-          <div class="form-field">
-            <label for="register-wa-number">Nomor WhatsApp</label>
-            <input
-              id="register-wa-number"
-              name="waNumber"
-              type="tel"
-              autocomplete="tel"
-              inputmode="tel"
-              required
-              placeholder="Contoh: 081234567890"
-              [(ngModel)]="form.waNumber"
-            />
-          </div>
-
-          <div class="form-field">
-            <label for="register-password">Kata sandi</label>
-            <input
-              id="register-password"
-              name="password"
-              type="password"
-              autocomplete="new-password"
-              required
-              [(ngModel)]="form.password"
-            />
-          </div>
-
-          <div class="form-field">
-            <label for="register-address">Alamat</label>
-            <textarea
-              id="register-address"
-              name="address"
-              autocomplete="street-address"
-              rows="3"
-              [(ngModel)]="form.address"
-            ></textarea>
-          </div>
-
-          <div class="form-field">
-            <label for="register-invite-code">Kode undangan organisasi</label>
-            <input
-              id="register-invite-code"
-              name="inviteCode"
-              type="text"
-              autocomplete="off"
-              autocapitalize="characters"
-              required
-              [(ngModel)]="form.inviteCode"
-            />
-          </div>
-
-          <button type="submit" class="submit-button" [disabled]="loading">
-            {{ loading ? 'Mengirim pendaftaran...' : 'Daftar' }}
-          </button>
-        </form>
-
-        <div *ngIf="successMessage" class="success-actions">
-          <a routerLink="/katalog">Lihat katalog</a>
-        </div>
-
-        <p *ngIf="!successMessage" class="login-prompt">
-          Sudah memiliki akun? <a routerLink="/auth/login">Masuk</a>
-        </p>
-      </section>
-    </div>
-  `,
-  styles: [`
-    .page-shell {
-      display: flex;
-      justify-content: center;
-      padding: clamp(1.5rem, 5vw, 3rem) 0;
-    }
-    .form-panel {
-      width: 100%;
-      max-width: 600px;
-      padding: clamp(1.25rem, 4vw, 2rem);
-      border: 1px solid var(--color-rule);
-      border-radius: var(--radius-card);
-      background: #ffffff;
-      box-shadow: var(--shadow-subtle);
-    }
-    h1 {
-      margin: 0;
-      color: var(--color-ink);
-      font-size: clamp(1.5rem, 4vw, 2rem);
-      line-height: 1.2;
-    }
-    .intro {
-      margin: 0.75rem 0 1.25rem;
-      color: var(--color-muted);
-      line-height: 1.55;
-    }
-    app-alert {
-      display: block;
-      margin: 1rem 0;
-    }
-    .form-layout {
-      display: grid;
-      gap: 1rem;
-      margin-top: 1.25rem;
-    }
-    .form-field {
-      display: grid;
-      gap: 0.4rem;
-    }
-    label {
-      color: var(--color-ink-2);
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    input,
-    textarea {
-      width: 100%;
-      min-height: 44px;
-      padding: 0.65rem 0.75rem;
-      border: 1px solid var(--color-muted-light);
-      border-radius: var(--radius-input);
-      background: #ffffff;
-      color: var(--color-ink);
-      font: inherit;
-    }
-    textarea {
-      min-height: 6rem;
-      resize: vertical;
-    }
-    input:hover:not(:focus-visible),
-    textarea:hover:not(:focus-visible) {
-      border-color: var(--color-muted);
-    }
-    input:focus-visible,
-    textarea:focus-visible,
-    a:focus-visible,
-    button:focus-visible {
-      outline: 3px solid var(--color-focus);
-      outline-offset: 2px;
-    }
-    .submit-button {
-      min-height: 44px;
-      padding: 0.65rem 1rem;
-      border: 1px solid var(--color-accent);
-      border-radius: var(--radius-input);
-      background: var(--color-accent);
-      color: #ffffff;
-      font: inherit;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .submit-button:hover:not(:disabled) {
-      filter: brightness(0.92);
-    }
-    .submit-button:active:not(:disabled) {
-      transform: translateY(1px);
-    }
-    .submit-button:disabled {
-      cursor: not-allowed;
-      opacity: 0.65;
-    }
-    .loading-message {
-      color: var(--color-ink);
-    }
-    .login-prompt {
-      margin: 1.25rem 0 0;
-      color: var(--color-muted);
-    }
-    .login-prompt a,
-    .success-actions a {
-      display: inline-flex;
-      align-items: center;
-      min-height: 44px;
-      color: var(--color-accent);
-      font-weight: 600;
-      text-decoration: underline;
-      text-underline-offset: 0.15em;
-    }
-    .login-prompt a:hover,
-    .success-actions a:hover {
-      color: var(--color-ink);
-    }
-    .login-prompt a:active,
-    .success-actions a:active {
-      text-decoration-thickness: 2px;
-    }
-    .success-actions {
-      margin-top: 1rem;
-    }
-    @media (max-width: 600px) {
-      .form-panel {
-        padding: 1.25rem 1rem;
-      }
-    }
-  `]
+  imports: [CommonModule, FormsModule, RouterLink, AlertComponent, IdWatermarkCanvasComponent],
+  templateUrl: './register.component.html',
+  styleUrl: './register.component.css'
 })
 export class RegisterComponent {
   private readonly authService = inject(AuthService);
+  private readonly membershipService = inject(MembershipService);
+
+  readonly knownInviteCodes: ReadonlyArray<InvitePreset> = [
+    {
+      code: 'GRAHA2026',
+      name: 'Komunitas Graha Indah',
+      type: 'Komunitas',
+      contact: 'Pengurus Komunitas'
+    },
+    {
+      code: 'NUSANTARA2026',
+      name: 'PT Nusantara Digital',
+      type: 'Kantor',
+      contact: 'Admin Divisi Umum'
+    }
+  ];
 
   form = {
+    inviteCode: '',
     fullName: '',
     waNumber: '',
-    password: '',
     address: '',
-    inviteCode: ''
+    password: '',
+    documentType: 'KTP',
+    documentUrl: '/img/sample-ktp.svg',
+    documentName: 'KTP_Demo_Sarga.svg',
+    documentNote: ''
   };
+
+  stepTwoUnlocked = false;
+  resolvedOrgName = 'Organisasi Tujuan';
+  inviteStatus: InviteStatus | null = null;
+  showWatermarkTool = false;
+  preparedDocument: WatermarkedDocumentOutput | null = null;
+
   loading = false;
   errorMessage = '';
   successMessage = '';
 
-  onSubmit(): void {
-    if (this.loading) return;
+  onInviteCodeChanged(): void {
+    const code = this.form.inviteCode.trim().toUpperCase();
+    const matched = this.knownInviteCodes.find(entry => entry.code === code);
+    if (matched) {
+      this.stepTwoUnlocked = true;
+      this.resolvedOrgName = matched.name;
+      this.inviteStatus = {
+        kind: 'ok',
+        title: `✓ Organisasi Ditemukan: ${matched.name}`,
+        message: `Jenis: ${matched.type}. Formulir data diri pada Langkah 2 telah dibuka.`
+      };
+      return;
+    }
 
-    if (!this.form.fullName.trim() || !this.form.waNumber.trim() || !this.form.inviteCode.trim()) {
+    this.stepTwoUnlocked = false;
+    this.resolvedOrgName = code ? `Kode ${code}` : 'Organisasi Tujuan';
+    if (code.length >= 4) {
+      this.inviteStatus = {
+        kind: 'info',
+        title: 'Siap divalidasi',
+        message: 'Klik "Validasi Kode" untuk membuka formulir data diri (kecocokan kode diverifikasi server saat mengirim).'
+      };
+    } else {
+      this.inviteStatus = null;
+    }
+  }
+
+  applyPresetInvite(code: string): void {
+    this.form.inviteCode = code;
+    this.onInviteCodeChanged();
+  }
+
+  unlockWithCustomCode(): void {
+    const code = this.form.inviteCode.trim().toUpperCase();
+    if (code.length < 4) {
+      this.stepTwoUnlocked = false;
+      this.inviteStatus = {
+        kind: 'warn',
+        title: 'Kode terlalu pendek',
+        message: 'Masukkan kode undangan resmi dari pengurus (minimal 4 karakter).'
+      };
+      return;
+    }
+
+    const matched = this.knownInviteCodes.find(entry => entry.code === code);
+    if (matched) {
+      this.onInviteCodeChanged();
+      return;
+    }
+
+    this.stepTwoUnlocked = true;
+    this.resolvedOrgName = `Organisasi (${code})`;
+    this.inviteStatus = {
+      kind: 'info',
+      title: `Kode ${code} digunakan`,
+      message: 'Formulir Langkah 2 dibuka. Kecocokan kode pada database akan diperiksa server saat pendaftaran dikirim.'
+    };
+  }
+
+  selectSampleDocument(url: string, name: string, type: string): void {
+    this.preparedDocument = null;
+    this.form.documentUrl = url;
+    this.form.documentName = name;
+    this.form.documentType = type;
+  }
+
+  onDocumentProcessed(doc: WatermarkedDocumentOutput): void {
+    this.preparedDocument = doc;
+    this.form.documentType = doc.documentType;
+    this.form.documentName = doc.fileName;
+    this.form.documentUrl = doc.dataUrl;
+  }
+
+  onDocumentCleared(): void {
+    this.preparedDocument = null;
+    this.form.documentUrl = '/img/sample-ktp.svg';
+    this.form.documentName = 'KTP_Demo_Sarga.svg';
+  }
+
+  onSubmit(): void {
+    if (this.loading || !this.stepTwoUnlocked) return;
+
+    const fullName = this.form.fullName.trim();
+    const waNumber = this.form.waNumber.trim();
+    const inviteCode = this.form.inviteCode.trim().toUpperCase();
+
+    if (!fullName || !waNumber || !inviteCode) {
       this.errorMessage = 'Nama, nomor WhatsApp, dan kode undangan wajib diisi.';
+      return;
+    }
+    if (this.form.password.length < 6) {
+      this.errorMessage = 'Kata sandi minimal 6 karakter.';
       return;
     }
 
     this.loading = true;
     this.errorMessage = '';
-    this.authService.register({
-      ...this.form,
-      fullName: this.form.fullName.trim(),
-      waNumber: this.form.waNumber.trim(),
-      address: this.form.address.trim(),
-      inviteCode: this.form.inviteCode.trim().toUpperCase()
-    }).subscribe({
-      next: response => {
-        this.loading = false;
-        this.successMessage = response.message;
-      },
-      error: (error: HttpErrorResponse) => {
-        this.loading = false;
-        this.errorMessage = error.error?.message || 'Pendaftaran tidak berhasil. Periksa data dan kode undangan.';
-      }
-    });
+
+    const safeDocumentUrl =
+      this.form.documentUrl.startsWith('data:') && this.form.documentUrl.length > 65000
+        ? undefined
+        : this.form.documentUrl;
+
+    this.authService
+      .register({
+        fullName,
+        waNumber,
+        password: this.form.password,
+        address: this.form.address.trim(),
+        inviteCode,
+        documentType: this.form.documentType,
+        documentName: this.form.documentName,
+        documentNote: this.form.documentNote.trim() || undefined,
+        documentUrl: safeDocumentUrl
+      })
+      .subscribe({
+        next: response => {
+          this.membershipService.saveDocumentPreview(`wa:${waNumber}`, {
+            documentType: this.form.documentType,
+            documentName: this.form.documentName,
+            documentUrl: this.form.documentUrl,
+            documentNote: this.form.documentNote.trim() || undefined,
+            watermarkSummary: this.preparedDocument?.watermarkSummary,
+            fingerprint: this.preparedDocument?.fingerprint,
+            savedAt: new Date().toISOString()
+          });
+
+          this.loading = false;
+          this.successMessage = response.message;
+        },
+        error: (error: HttpErrorResponse) => {
+          this.loading = false;
+          this.errorMessage =
+            error.error?.message || 'Pendaftaran tidak berhasil. Periksa data dan kode undangan.';
+        }
+      });
   }
 }

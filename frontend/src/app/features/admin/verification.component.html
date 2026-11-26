@@ -1,0 +1,200 @@
+<div class="page page-wide">
+  <ng-container *ngIf="waitingAuth">
+    <div class="panel panel-pad">
+      <p class="small" role="status" aria-live="polite">Memeriksa sesi pengurus...</p>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!waitingAuth && !authService.isAdmin()">
+    <div class="page-head">
+      <div>
+        <p class="kicker">Pengurus</p>
+        <h1>Verifikasi anggota dan pinjaman</h1>
+      </div>
+    </div>
+    <app-alert
+      kind="warning"
+      title="Halaman khusus pengurus"
+      message="Halaman ini hanya untuk pengurus organisasi aktif."
+    />
+    <div class="btn-row" style="margin-top:1rem">
+      <a class="btn-primary" routerLink="/katalog">Kembali ke katalog</a>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!waitingAuth && authService.isAdmin()">
+    <div class="page-head">
+      <div>
+        <p class="kicker">Pengurus · UC-AD-01</p>
+        <h1>Verifikasi anggota dan pinjaman</h1>
+        <p class="lede">
+          Periksa pendaftar baru dan pengajuan pinjaman yang menunggu keputusan.
+        </p>
+      </div>
+    </div>
+
+    <app-admin-nav active="verifikasi" />
+
+    <app-alert
+      *ngIf="errorMessage"
+      kind="error"
+      title="Sebagian antrean gagal dimuat"
+      [message]="errorMessage"
+      style="display:block;margin-bottom:1rem"
+    />
+
+    <p *ngIf="loading" class="small muted" role="status" aria-live="polite" style="margin-bottom:1rem">
+      Memuat antrean verifikasi...
+    </p>
+
+    <div class="grid-2">
+      <section aria-labelledby="pending-members-heading">
+        <div class="section-head">
+          <h2 id="pending-members-heading">Anggota menunggu ({{ pendingMembers.length }})</h2>
+          <p>Setujui setelah nomor WhatsApp dan dokumen cocok.</p>
+        </div>
+
+        <div *ngIf="pendingMembers.length > 0; else emptyMembers" class="list">
+          <article class="list-item pending-card" *ngFor="let m of pendingMembers">
+            <div class="pending-card-layout">
+              <button
+                class="doc-thumb-preview"
+                type="button"
+                [attr.aria-label]="'Buka dokumen verifikasi ' + (m.user?.fullName || 'calon anggota')"
+                title="Klik untuk membuka pop-up dokumen"
+                (click)="openDocModal(m)"
+              >
+                <img
+                  [src]="memberDocImg(m)"
+                  [alt]="'Dokumen ' + (m.user?.fullName || 'calon anggota')"
+                  class="doc-thumb-img"
+                  (error)="onImgError($event)"
+                />
+                <span class="doc-thumb-tag">👁 Buka Dokumen</span>
+              </button>
+
+              <div class="pending-card-content">
+                <div class="item-head" style="margin-bottom:.4rem">
+                  <div>
+                    <span class="cell-main">{{ m.user?.fullName || 'Calon Anggota' }}</span>
+                    <span class="cell-sub">
+                      <a
+                        *ngIf="waHref(m.user?.waNumber) as href; else plainWa"
+                        class="link"
+                        [href]="href"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {{ m.user?.waNumber }}
+                      </a>
+                      <ng-template #plainWa>{{ m.user?.waNumber || '-' }}</ng-template>
+                      · diajukan {{ formatDate(m.joinedAt || m.createdAt) }}
+                    </span>
+                  </div>
+                  <span class="tag-waiting">Menunggu Verifikasi</span>
+                </div>
+
+                <div class="pending-doc-meta" style="margin-bottom:.35rem">
+                  <span class="badge-doc-type">{{ memberDocType(m) }}</span>
+                  <span class="tiny mono muted">{{ memberDocName(m) }}</span>
+                </div>
+
+                <p *ngIf="m.address || m.user?.address" class="tiny muted" style="margin:.15rem 0 0">
+                  <strong>Alamat/Divisi:</strong> {{ m.address || m.user?.address }}
+                </p>
+                <p *ngIf="memberDocNote(m) as note" class="tiny italic muted" style="margin:.15rem 0 0">
+                  {{ note }}
+                </p>
+
+                <div class="actions" style="margin-top:.75rem">
+                  <button type="button" class="btn-secondary btn-sm" [disabled]="busy" (click)="openDocModal(m)">
+                    Cek Detail &amp; Dokumen
+                  </button>
+                  <button type="button" class="btn-primary btn-sm" [disabled]="busy" (click)="approveMember(m.id)">
+                    ✓ Setujui
+                  </button>
+                  <button type="button" class="btn-danger btn-sm" [disabled]="busy" (click)="openRejectMember(m)">
+                    ✕ Tolak
+                  </button>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <ng-template #emptyMembers>
+          <div class="empty">
+            <p class="empty-title">Tidak ada pendaftar baru</p>
+            <p class="empty-body">Semua pendaftaran sudah diperiksa.</p>
+          </div>
+        </ng-template>
+      </section>
+
+      <section aria-labelledby="pending-loans-heading">
+        <div class="section-head">
+          <h2 id="pending-loans-heading">Pinjaman menunggu ({{ pendingLoans.length }})</h2>
+          <p>Persetujuan akan mengubah status barang menjadi dipinjam.</p>
+        </div>
+
+        <div *ngIf="pendingLoans.length > 0; else emptyLoans" class="list">
+          <article class="list-item" *ngFor="let loan of pendingLoans">
+            <div class="item-head" style="margin-bottom:.25rem">
+              <div>
+                <span class="cell-main">{{ loan.item?.name || 'Barang' }}</span>
+                <span class="cell-sub">
+                  {{ loan.borrower?.fullName || 'Anggota' }} · {{ formatDate(loan.startDate) }} – {{ formatDate(loan.endDate) }}
+                </span>
+              </div>
+              <app-status-badge kind="loan" [status]="loan.status" perspective="pemilik" />
+            </div>
+
+            <p class="small muted" style="margin:0">{{ loan.purpose }}</p>
+            <p class="tiny muted" style="margin:0">
+              Pemilik: {{ loan.owner?.fullName || loan.item?.owner?.fullName || 'Aset organisasi' }}
+              · kode {{ loan.item?.code || '—' }}
+            </p>
+
+            <div class="actions">
+              <button type="button" class="btn-primary btn-sm" [disabled]="busy" (click)="approveLoan(loan.id)">
+                Setujui
+              </button>
+              <button type="button" class="btn-danger btn-sm" [disabled]="busy" (click)="openRejectLoan(loan)">
+                Tolak
+              </button>
+              <a class="btn-secondary btn-sm" [routerLink]="['/katalog', loan.itemId]">Lihat barang</a>
+            </div>
+          </article>
+        </div>
+
+        <ng-template #emptyLoans>
+          <div class="empty">
+            <p class="empty-title">Tidak ada pengajuan menunggu</p>
+            <p class="empty-body">Pengajuan baru akan muncul di sini.</p>
+          </div>
+        </ng-template>
+      </section>
+    </div>
+  </ng-container>
+</div>
+
+<app-member-doc-modal
+  [open]="!!selectedDocMembership"
+  [membership]="selectedDocMembership"
+  [organizationName]="orgName"
+  [busy]="busy"
+  (closed)="closeDocModal()"
+  (approve)="approveMember($event)"
+  (reject)="onRejectFromDocModal($event)"
+/>
+
+<app-reject-reason-modal
+  [open]="!!rejectTarget"
+  [title]="rejectTitle"
+  [description]="rejectDescription"
+  [placeholder]="rejectPlaceholder"
+  [submitLabel]="rejectSubmitLabel"
+  [busy]="busy"
+  [serverError]="rejectError"
+  (closed)="closeRejectModal()"
+  (confirmed)="submitReject($event)"
+/>

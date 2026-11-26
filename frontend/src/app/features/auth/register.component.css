@@ -1,0 +1,66 @@
+.step-one-box {
+  border-bottom: 1px solid var(--color-rule-2);
+  padding-bottom: 1.15rem;
+  margin-bottom: 1.15rem;
+}
+
+.step-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.invite-input-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.invite-code-input {
+  flex: 1 1 200px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.demo-invite-row {
+  margin-top: 0.65rem;
+}
+
+.invite-status-banner {
+  margin-top: 0.65rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid var(--color-rule);
+}
+
+.status-ok {
+  background: var(--color-success-soft);
+  border-color: var(--color-success-border);
+  color: var(--color-success-ink);
+}
+
+.status-info {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-border);
+  color: var(--color-accent-soft-ink);
+}
+
+.status-warn {
+  background: var(--color-amber-soft);
+  border-color: var(--color-amber-border);
+  color: var(--color-amber-ink);
+}
+
+.doc-section {
+  margin-top: 1.25rem;
+  border-top: 1px dashed var(--color-rule);
+  padding-top: 1.15rem;
+}
+
+.sidebar-stack {
+  display: grid;
+  gap: 1rem;
+}

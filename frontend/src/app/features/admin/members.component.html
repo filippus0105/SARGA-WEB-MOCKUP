@@ -1,0 +1,142 @@
+<div class="page page-wide">
+  <ng-container *ngIf="waitingAuth">
+    <div class="panel panel-pad">
+      <p class="small" role="status" aria-live="polite">Memeriksa sesi pengurus...</p>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!waitingAuth && !authService.isAdmin()">
+    <div class="page-head">
+      <div>
+        <p class="kicker">Pengurus · UC-AD-03</p>
+        <h1>Anggota organisasi</h1>
+      </div>
+    </div>
+    <app-alert
+      kind="warning"
+      title="Halaman khusus pengurus"
+      message="Halaman ini hanya untuk pengurus organisasi aktif."
+    />
+    <div class="btn-row" style="margin-top:1rem">
+      <a class="btn-primary" routerLink="/katalog">Kembali ke katalog</a>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!waitingAuth && authService.isAdmin()">
+    <div class="page-head split">
+      <div>
+        <p class="kicker">Pengurus · UC-AD-03</p>
+        <h1>Anggota organisasi</h1>
+        <p class="lede">
+          Daftar keanggotaan {{ orgName }}, termasuk yang menunggu verifikasi.
+        </p>
+      </div>
+      <div class="head-actions">
+        <a class="btn-primary" routerLink="/admin-tambah-anggota">Tambah anggota</a>
+      </div>
+    </div>
+
+    <app-admin-nav active="anggota" />
+
+    <app-alert
+      *ngIf="errorMessage"
+      kind="error"
+      title="Sebagian daftar anggota gagal dimuat"
+      [message]="errorMessage"
+      style="display:block;margin-bottom:1rem"
+    />
+
+    <div class="toolbar">
+      <div class="search-row">
+        <label class="sr-only" for="member-search">Cari anggota</label>
+        <input
+          class="form-input"
+          id="member-search"
+          type="search"
+          placeholder="Cari nama, WhatsApp, atau posisi"
+          autocomplete="off"
+          [(ngModel)]="searchQuery"
+        />
+      </div>
+
+      <div class="chips" role="group" aria-label="Filter status anggota">
+        <button
+          *ngFor="let tab of statusTabs"
+          type="button"
+          class="chip"
+          [class.chip-active]="statusFilter === tab.key"
+          (click)="statusFilter = tab.key"
+        >
+          {{ tab.label }} <small>{{ countForStatus(tab.key) }}</small>
+        </button>
+      </div>
+    </div>
+
+    <p *ngIf="loading" class="small muted" role="status" aria-live="polite" style="margin-bottom:.75rem">
+      Memuat daftar anggota...
+    </p>
+
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Tabel anggota">
+      <table class="ruled-table">
+        <caption class="sr-only">Daftar anggota organisasi</caption>
+        <thead>
+          <tr>
+            <th>Nama</th>
+            <th>Peran dan posisi</th>
+            <th>Status</th>
+            <th>Bergabung</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="!loading && filteredMembers.length === 0">
+            <td colspan="5">
+              <div class="empty" style="padding:1.25rem">
+                <p class="empty-title">Tidak ada anggota</p>
+                <p class="empty-body">
+                  {{ searchQuery || statusFilter !== 'ALL' ? 'Ubah filter atau kata kunci.' : 'Belum ada data keanggotaan pada organisasi ini.' }}
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngFor="let member of filteredMembers">
+            <td>
+              <div class="member-cell">
+                <span class="avatar avatar-sm" aria-hidden="true">{{ initials(member.fullName) }}</span>
+                <div>
+                  <span class="cell-main">{{ member.fullName }}</span>
+                  <span class="cell-sub">{{ member.waNumber }}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="cell-main">{{ member.role === 'ADMIN' ? 'Pengurus' : 'Anggota' }}</span>
+              <span class="cell-sub">{{ member.position || 'Anggota' }}</span>
+            </td>
+            <td>
+              <span [class]="statusTagClass(member.status)">{{ statusLabel(member.status) }}</span>
+              <span *ngIf="member.isLocalOnly" class="cell-sub">Lokal peramban</span>
+            </td>
+            <td>{{ formatDate(member.joinedAt) }}</td>
+            <td>
+              <button type="button" class="btn-secondary btn-sm" (click)="openMemberModal(member)">
+                Rincian &amp; Peran
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+</div>
+
+<app-member-detail-modal
+  [member]="selectedMember"
+  [memberLoans]="selectedMemberLoans"
+  [verifiedAdminCount]="verifiedAdminCount"
+  [saving]="saving"
+  [serverError]="modalError"
+  (closed)="closeMemberModal()"
+  (saved)="saveMemberChanges($event)"
+/>

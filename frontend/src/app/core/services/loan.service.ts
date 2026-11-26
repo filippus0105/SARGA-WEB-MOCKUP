@@ -2,12 +2,25 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { LoanTransaction, ApiResponse } from '../models';
+import { LoanStatus, LoanTransaction } from '../models';
 
 export interface CreateLoanPayload {
   itemId: string;
   expectedReturnDate: string;
   purpose: string;
+}
+
+export interface LoanListResponse {
+  success: boolean;
+  count: number;
+  loans: LoanTransaction[];
+  message?: string;
+}
+
+export interface LoanResponse {
+  success: boolean;
+  loan: LoanTransaction;
+  message?: string;
 }
 
 @Injectable({
@@ -17,29 +30,37 @@ export class LoanService {
   private http = inject(HttpClient);
   private baseUrl = `${environment.apiUrl}/loans`;
 
-  getMyLoans(): Observable<ApiResponse<LoanTransaction[]>> {
-    return this.http.get<ApiResponse<LoanTransaction[]>>(`${this.baseUrl}/me`);
-  }
-
-  getOrganizationLoans(status?: string): Observable<ApiResponse<LoanTransaction[]>> {
+  getMyLoans(status?: LoanStatus): Observable<LoanListResponse> {
     let params = new HttpParams();
     if (status) params = params.set('status', status);
-    return this.http.get<ApiResponse<LoanTransaction[]>>(this.baseUrl, { params });
+    return this.http.get<LoanListResponse>(`${this.baseUrl}/me`, { params });
   }
 
-  requestLoan(payload: CreateLoanPayload): Observable<ApiResponse<LoanTransaction>> {
-    return this.http.post<ApiResponse<LoanTransaction>>(this.baseUrl, payload);
+  getOrganizationLoans(status?: LoanStatus, q?: string): Observable<LoanListResponse> {
+    let params = new HttpParams();
+    if (status) params = params.set('status', status);
+    if (q) params = params.set('q', q);
+    return this.http.get<LoanListResponse>(this.baseUrl, { params });
   }
 
-  approveLoan(loanId: string): Observable<ApiResponse<LoanTransaction>> {
-    return this.http.patch<ApiResponse<LoanTransaction>>(`${this.baseUrl}/${loanId}/approve`, {});
+  requestLoan(payload: CreateLoanPayload): Observable<LoanResponse> {
+    return this.http.post<LoanResponse>(this.baseUrl, payload);
   }
 
-  rejectLoan(loanId: string, reason?: string): Observable<ApiResponse<LoanTransaction>> {
-    return this.http.patch<ApiResponse<LoanTransaction>>(`${this.baseUrl}/${loanId}/reject`, { reason });
+  approveLoan(loanId: string): Observable<LoanResponse> {
+    return this.http.patch<LoanResponse>(`${this.baseUrl}/${loanId}/approve`, {});
   }
 
-  returnLoan(loanId: string, notes?: string): Observable<ApiResponse<LoanTransaction>> {
-    return this.http.patch<ApiResponse<LoanTransaction>>(`${this.baseUrl}/${loanId}/return`, { notes });
+  rejectLoan(loanId: string, rejectionReason: string): Observable<LoanResponse> {
+    return this.http.patch<LoanResponse>(`${this.baseUrl}/${loanId}/reject`, { rejectionReason });
+  }
+
+  cancelLoan(loanId: string): Observable<LoanResponse> {
+    return this.http.patch<LoanResponse>(`${this.baseUrl}/${loanId}/cancel`, {});
+  }
+
+  returnLoan(loanId: string, conditionNote?: string): Observable<LoanResponse> {
+    const body = conditionNote?.trim() ? { conditionNote: conditionNote.trim() } : {};
+    return this.http.patch<LoanResponse>(`${this.baseUrl}/${loanId}/return`, body);
   }
 }

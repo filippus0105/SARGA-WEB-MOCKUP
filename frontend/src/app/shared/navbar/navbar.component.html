@@ -51,6 +51,18 @@
         class="nav-item"
         (click)="menuOpen = false"
       >Pengumuman</a>
+        routerLink="/pinjaman-saya"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="menuOpen = false"
+      >Pinjaman saya</a>
+      <a
+        *ngIf="authService.activeMembership()?.status === 'TERVERIFIKASI'"
+        routerLink="/barang-saya"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="menuOpen = false"
+      >Barang saya</a>
       <a
         *ngIf="authService.activeMembership()?.status === 'TERVERIFIKASI'"
         routerLink="/barang/tambah"
@@ -58,6 +70,41 @@
         class="nav-item"
         (click)="menuOpen = false"
       >Tambah barang</a>
+      <a
+        *ngIf="currentUser$ | async"
+        routerLink="/status-akun"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="menuOpen = false"
+      >Status akun</a>
+      <a
+        *ngIf="currentUser$ | async"
+        routerLink="/gabung"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="menuOpen = false"
+      >Gabung</a>
+      <a
+        *ngIf="authService.isAdmin() && authService.activeMembership()?.status === 'TERVERIFIKASI'"
+        routerLink="/admin-monitoring"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="menuOpen = false"
+      >Monitoring</a>
+      <a
+        *ngIf="authService.isAdmin() && authService.activeMembership()?.status === 'TERVERIFIKASI'"
+        routerLink="/admin-verifikasi"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="menuOpen = false"
+      >Verifikasi</a>
+      <a
+        *ngIf="authService.isAdmin() && authService.activeMembership()?.status === 'TERVERIFIKASI'"
+        routerLink="/admin-anggota"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="menuOpen = false"
+      >Anggota</a>
 
       <ng-container *ngIf="currentUser$ | async as user; else guestActions">
         <label class="organization-picker" *ngIf="user.memberships?.length; else noOrganization">

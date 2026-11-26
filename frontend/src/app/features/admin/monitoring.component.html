@@ -1,0 +1,176 @@
+<div class="page page-wide">
+  <ng-container *ngIf="waitingAuth">
+    <div class="panel panel-pad">
+      <p class="small" role="status" aria-live="polite">Memeriksa sesi pengurus...</p>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!waitingAuth && !authService.isAdmin()">
+    <div class="page-head">
+      <div>
+        <p class="kicker">Pengurus</p>
+        <h1>Monitoring sirkulasi</h1>
+      </div>
+    </div>
+    <app-alert
+      kind="warning"
+      title="Halaman khusus pengurus"
+      message="Halaman ini hanya untuk pengurus organisasi aktif."
+    />
+    <div class="btn-row" style="margin-top:1rem">
+      <a class="btn-primary" routerLink="/katalog">Kembali ke katalog</a>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!waitingAuth && authService.isAdmin()">
+    <div class="page-head">
+      <div>
+        <p class="kicker">Pengurus · UC-AD-04</p>
+        <h1>Monitoring sirkulasi</h1>
+        <p class="lede">
+          Semua pinjaman di {{ orgName }}. Gunakan pencarian dan filter status untuk menemukan transaksi.
+        </p>
+      </div>
+    </div>
+
+    <app-admin-nav active="monitoring" />
+
+    <app-alert
+      *ngIf="errorMessage"
+      kind="error"
+      title="Gagal memuat transaksi"
+      [message]="errorMessage"
+      style="display:block;margin-bottom:1rem"
+    />
+
+    <div class="stat-strip">
+      <div class="stat">
+        <span class="stat-value">{{ loans.length }}</span>
+        <span class="stat-label">Total transaksi</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{{ countForFilter('MENUNGGU') }}</span>
+        <span class="stat-label">Menunggu</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{{ countForFilter('AKTIF') }}</span>
+        <span class="stat-label">Sedang berjalan</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{{ countForFilter('TERLAMBAT') }}</span>
+        <span class="stat-label">Terlambat</span>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-row">
+        <label class="sr-only" for="admin-loan-search">Cari transaksi</label>
+        <input
+          class="form-input"
+          id="admin-loan-search"
+          type="search"
+          placeholder="Cari barang, peminjam, atau pemilik"
+          autocomplete="off"
+          [(ngModel)]="searchQuery"
+        />
+        <a class="btn-secondary" routerLink="/admin-verifikasi">Verifikasi pengajuan</a>
+      </div>
+
+      <div class="chips" role="group" aria-label="Filter status sirkulasi">
+        <button
+          *ngFor="let tab of statusTabs"
+          type="button"
+          class="chip"
+          [class.chip-active]="statusFilter === tab.key"
+          (click)="statusFilter = tab.key"
+        >
+          {{ tab.label }} <small>{{ countForFilter(tab.key) }}</small>
+        </button>
+      </div>
+
+      <p class="tiny muted" aria-live="polite" style="margin:0">
+        {{ loading ? 'Memuat transaksi...' : filteredLoans.length + ' transaksi' }}
+      </p>
+    </div>
+
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Tabel sirkulasi barang">
+      <table class="ruled-table">
+        <caption class="sr-only">Daftar transaksi pinjaman organisasi</caption>
+        <thead>
+          <tr>
+            <th>Barang</th>
+            <th>Peminjam</th>
+            <th>Pemilik</th>
+            <th>Tanggal</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="!loading && filteredLoans.length === 0">
+            <td colspan="6">
+              <div class="empty" style="padding:1.25rem">
+                <p class="empty-title">Tidak ada transaksi</p>
+                <p class="empty-body">
+                  {{ searchQuery || statusFilter !== 'ALL' ? 'Ubah filter status atau kata kunci pencarian.' : 'Belum ada transaksi peminjaman pada organisasi ini.' }}
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngFor="let loan of filteredLoans">
+            <td>
+              <span class="cell-main">{{ loan.item?.name || 'Barang' }}</span>
+              <span class="cell-sub mono">{{ loan.item?.code || '—' }}</span>
+            </td>
+            <td>
+              <span class="cell-main">{{ loan.borrower?.fullName || 'Anggota' }}</span>
+              <span class="cell-sub" *ngIf="loan.borrower?.waNumber">{{ loan.borrower?.waNumber }}</span>
+            </td>
+            <td>{{ loan.owner?.fullName || loan.item?.owner?.fullName || 'Aset organisasi' }}</td>
+            <td>
+              <span class="cell-main">{{ formatDate(loan.startDate) }}</span>
+              <span class="cell-sub">s.d. {{ formatDate(loan.endDate) }}</span>
+            </td>
+            <td>
+              <app-status-badge
+                kind="loan"
+                [status]="loan.status"
+                perspective="pemilik"
+                [overdue]="isOverdue(loan)"
+              />
+            </td>
+            <td>
+              <div class="btn-row">
+                <button type="button" class="btn-secondary btn-sm" (click)="openLoanDetail(loan)">
+                  Rincian
+                </button>
+                <a
+                  *ngIf="(loan.status === 'AKTIF' || loan.status === 'DISETUJUI') && reminderUrl(loan) as waLink"
+                  class="btn-secondary btn-sm"
+                  [href]="waLink"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Ingatkan
+                </a>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+</div>
+
+<app-monitoring-loan-modal
+  [loan]="selectedLoan"
+  [overdue]="selectedLoan ? isOverdue(selectedLoan) : false"
+  [busy]="actionBusy"
+  [errorMessage]="modalError"
+  [reminderHref]="selectedLoan ? reminderUrl(selectedLoan) : null"
+  (closed)="closeDetail()"
+  (approve)="confirmApprove($event)"
+  (reject)="confirmReject($event)"
+  (returnLoan)="confirmReturn($event)"
+/>

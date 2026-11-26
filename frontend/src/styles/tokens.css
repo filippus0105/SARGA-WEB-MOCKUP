@@ -1,0 +1,96 @@
+:root {
+  --color-paper: #fffefb;
+  --color-paper-2: #f7f6f2;
+  --color-paper-3: #efeee9;
+
+  --color-ink: #111111;
+  --color-ink-2: #2b2b2b;
+  --color-ink-hover: #333333;
+  --color-muted: #475569;
+  --color-muted-light: #64748b;
+
+  --color-rule: #e3e1da;
+  --color-rule-2: #ecebe5;
+  --color-rule-dark: #1f1f1f;
+
+  /* Primary Accent: Emerald / Teal per SRS v1.2 */
+  --color-accent: #0f766e;
+  --color-accent-ink: #ffffff;
+  --color-accent-soft: #e6f7f4;
+  --color-accent-soft-ink: #0f4f46;
+  --color-accent-border: #9fd9d1;
+  --color-focus: #0f766e;
+  --color-focus-ring: rgba(15, 118, 110, 0.18);
+
+  --color-amber-soft: #fffbeb;
+  --color-amber-ink: #7a4a00;
+  --color-amber-border: #f0c36d;
+
+  --color-rose-soft: #fff1f2;
+  --color-rose-hover: #ffe4e6;
+  --color-rose-ink: #8a1c2b;
+  --color-rose-border: #f3b6bf;
+
+  --color-success-soft: #ecfdf5;
+  --color-success-ink: #065f46;
+  --color-success-border: #a7f3d0;
+
+  --font-display: 'Epilogue', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Epilogue', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  --radius-card: 16px;
+  --radius-pill: 999px;
+  --radius-input: 10px;
+
+  --shadow-subtle: 0 1px 2px rgba(17, 17, 17, 0.06);
+  --shadow-floating: 0 20px 40px -24px rgba(17, 17, 17, 0.35);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+select {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+.container {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
