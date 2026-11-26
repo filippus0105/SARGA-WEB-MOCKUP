@@ -46,13 +46,22 @@ export interface Membership {
   role: Role;
   position: string;
   status: VerificationStatus;
+  joinedAt?: string;
   rejectionReason?: string;
   documentType?: string;
   documentUrl?: string;
   documentName?: string;
   documentNote?: string;
   address?: string;
+  createdAt?: string;
+  user?: {
+    id: string;
+    fullName: string;
+    waNumber: string;
+    address?: string;
+  };
   organization?: Organization;
+  isLocalOnly?: boolean;
 }
 
 export interface Item {
@@ -77,6 +86,14 @@ export interface Item {
   updatedAt?: string;
   owner?: { id: string; fullName: string; waNumber: string };
   organization?: { id: string; name: string };
+  loans?: Array<{
+    id: string;
+    startDate: string;
+    endDate: string;
+    status: LoanStatus;
+    purpose?: string;
+    borrower?: { id: string; fullName: string };
+  }>;
 }
 
 export interface LoanTransaction {
@@ -90,8 +107,37 @@ export interface LoanTransaction {
   status: LoanStatus;
   purpose: string;
   rejectionReason?: string;
+  conditionNote?: string;
+  returnConfirmedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  isOverdue?: boolean;
+  daysOverdue?: number;
   item?: Item;
   borrower?: { id: string; fullName: string; waNumber: string };
+  owner?: { id: string; fullName: string; waNumber: string } | null;
+}
+
+export interface StructureMemberEntry {
+  id?: string;
+  userId: string;
+  fullName: string;
+  waNumber: string;
+  role: Role;
+  position: string;
+  division?: string | null;
+  joinedAt: string;
+}
+
+export interface WatermarkedDocumentOutput {
+  dataUrl: string;
+  blob: Blob;
+  file: File;
+  fileName: string;
+  documentType: string;
+  watermarkSummary: string;
+  fingerprint: string;
+  redactionCount: number;
 }
 
 export interface StructureMember {

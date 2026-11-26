@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { User, Membership } from '../models';
+import { User, Membership, Organization, VerificationStatus } from '../models';
 
 export interface AuthResponse {
   success: boolean;
@@ -17,7 +17,41 @@ export interface RegisterRequest {
   fullName: string;
   address?: string;
   inviteCode: string;
+  documentType?: string;
+  documentUrl?: string;
+  documentName?: string;
+  documentNote?: string;
 }
+
+const KNOWN_DIRECTORY_ORGS: Organization[] = [
+  {
+    id: 'org-graha',
+    name: 'Komunitas Graha Indah',
+    type: 'Komunitas',
+    address: 'Perum Graha Indah Blok C, Jakarta',
+    contact: '081234567890',
+    inviteCode: 'GRAHA2026',
+    status: 'Aktif'
+  },
+  {
+    id: 'org-rt05',
+    name: 'RT 05 / RW 08 Sukamaju',
+    type: 'RT/RW',
+    address: 'Perumahan Sukamaju Blok A-E',
+    contact: '0812-1111-0005',
+    inviteCode: 'RT05-2026',
+    status: 'Aktif'
+  },
+  {
+    id: 'org-nusantara',
+    name: 'PT Nusantara Digital',
+    type: 'Kantor',
+    address: 'Gedung Cyber 2 Lt. 14, Kuningan, Jakarta Selatan',
+    contact: '081298765432',
+    inviteCode: 'NUSANTARA2026',
+    status: 'Aktif'
+  }
+];
 
 @Injectable({
   providedIn: 'root'
@@ -60,8 +94,10 @@ export class AuthService {
       tap(response => {
         localStorage.setItem('sarga_token', response.token);
         this.setUser(response.user);
-        if (response.user.memberships && response.user.memberships.length > 0) {
-          this.setActiveOrg(response.user.memberships[0].orgId);
+        const merged = this.currentUser()?.memberships || [];
+        const active = merged.find(m => m.status === 'TERVERIFIKASI') || merged[0];
+        if (active) {
+          this.setActiveOrg(active.orgId);
         }
       })
     );
@@ -83,12 +119,123 @@ export class AuthService {
     }
   }
 
+  resolveOrganizationByInvite(inviteCode: string): Organization | null {
+    const normalized = inviteCode.trim().toUpperCase();
+    if (!normalized) return null;
+
+    const userOrgs = (this.currentUser()?.memberships || [])
+      .map(m => m.organization)
+      .filter((org): org is Organization => !!org);
+    const existingMatch = userOrgs.find(
+      org => org.inviteCode?.toUpperCase() === normalized && org.status !== 'Nonaktif'
+    );
+    if (existingMatch) return existingMatch;
+
+    return KNOWN_DIRECTORY_ORGS.find(
+      org => org.inviteCode.toUpperCase() === normalized && org.status === 'Aktif'
+    ) || null;
+  }
+
+  hasMembershipInOrg(org: Organization): boolean {
+    const memberships = this.currentUser()?.memberships || [];
+    const normalizedCode = org.inviteCode?.trim().toUpperCase();
+    return memberships.some(
+      m =>
+        m.orgId === org.id ||
+        (normalizedCode && m.organization?.inviteCode?.toUpperCase() === normalizedCode) ||
+        m.organization?.name?.toLowerCase() === org.name.toLowerCase()
+    );
+  }
+
+  addAdditionalMembership(membership: Membership): void {
+    const user = this.currentUser();
+    if (!user) return;
+    const existing = user.memberships || [];
+    const updatedMemberships = [...existing, membership];
+    this.saveLocalMemberships(user.id, membership);
+    const updatedUser: User = { ...user, memberships: updatedMemberships };
+    this.setUser(updatedUser);
+  }
+
+  updateActiveMembershipStatus(status: VerificationStatus, rejectionReason?: string | null): void {
+    const user = this.currentUser();
+    const active = this.activeMembership();
+    if (user && active) {
+      const updatedMemberships = (user.memberships || []).map(m => {
+        if (m.id === active.id) {
+          return { ...m, status, rejectionReason: rejectionReason || undefined };
+        }
+        return m;
+      });
+      const updatedUser = { ...user, memberships: updatedMemberships };
+      this.setUser(updatedUser);
+      const match = updatedMemberships.find(m => m.id === active.id) || null;
+      this.activeMembership.set(match);
+    }
+  }
+
+  refreshUser(): void {
+    this.loadStoredUser();
+  }
+
   private setUser(user: User | null): void {
-    if (user && !user.name) {
-      user.name = user.fullName;
+    if (user) {
+      const localExtras = this.loadLocalMemberships(user.id);
+      const baseMemberships = user.memberships || [];
+      const merged = [...baseMemberships];
+      for (const extra of localExtras) {
+        const duplicate = merged.some(
+          m =>
+            m.id === extra.id ||
+            m.orgId === extra.orgId ||
+            (extra.organization?.inviteCode &&
+              m.organization?.inviteCode?.toUpperCase() === extra.organization.inviteCode.toUpperCase())
+        );
+        if (!duplicate) {
+          merged.push(extra);
+        }
+      }
+      user = {
+        ...user,
+        name: user.name || user.fullName,
+        memberships: merged
+      };
     }
     this.currentUser.set(user);
     this.userSubject.next(user);
+  }
+
+  private localStorageKey(userId: string): string {
+    return `sarga_local_memberships_${userId}`;
+  }
+
+  private loadLocalMemberships(userId: string): Membership[] {
+    try {
+      const raw = localStorage.getItem(this.localStorageKey(userId));
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private saveLocalMemberships(userId: string, membership: Membership): void {
+    const current = this.loadLocalMemberships(userId);
+    const next = [...current.filter(m => m.orgId !== membership.orgId), membership];
+    try {
+      localStorage.setItem(this.localStorageKey(userId), JSON.stringify(next));
+    } catch {
+      const compact: Membership = { ...membership, documentUrl: undefined };
+      try {
+        localStorage.setItem(
+          this.localStorageKey(userId),
+          JSON.stringify([...current.filter(m => m.orgId !== membership.orgId), compact])
+        );
+      } catch {
+        // Ignore storage quota overflow while retaining in-memory signal state
+      }
+    }
   }
 
   private loadStoredUser(): void {
@@ -97,11 +244,12 @@ export class AuthService {
       this.http.get<{ success: boolean; user: User }>(`${this.apiUrl}/me`).subscribe({
         next: (res) => {
           this.setUser(res.user);
+          const memberships = this.currentUser()?.memberships || [];
           const activeOrgId = localStorage.getItem('sarga_active_org_id');
-          if (activeOrgId) {
+          if (activeOrgId && memberships.some(m => m.orgId === activeOrgId)) {
             this.setActiveOrg(activeOrgId);
-          } else if (res.user.memberships && res.user.memberships.length > 0) {
-            this.setActiveOrg(res.user.memberships[0].orgId);
+          } else if (memberships.length > 0) {
+            this.setActiveOrg(memberships[0].orgId);
           }
         },
         error: () => this.logout()

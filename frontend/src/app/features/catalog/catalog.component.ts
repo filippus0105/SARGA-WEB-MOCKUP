@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { ItemService } from '../../core/services/item.service';
+import { ItemService, normalizeItemImagePath } from '../../core/services/item.service';
 import { Item } from '../../core/models';
 import { AlertComponent } from '../../shared/alert/alert.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
@@ -282,7 +282,9 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.errorStatus = 0;
     this.itemsRequest = this.itemService.getItems({ search: this.searchQuery.trim() }).subscribe({
       next: (res) => {
-        this.items = res.items;
+        this.items = (res.items || [])
+          .map(item => this.itemService.getEffectiveItem(item))
+          .filter(item => item.status !== 'DIARSIPKAN' && !this.itemService.isLocallyArchived(item.id));
         this.loading = false;
       },
       error: (error: HttpErrorResponse) => {
@@ -301,9 +303,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
   }
 
   imageSource(item: Item): string {
-    const source = item.image || item.imageUrl;
-    if (!source || source === 'assets/placeholder-item.svg') return '/img/placeholder-item.svg';
-    return source.startsWith('assets/') ? `/${source.slice('assets/'.length)}` : source;
+    return normalizeItemImagePath(item.image || item.imageUrl);
   }
 
   onImageError(event: Event): void {

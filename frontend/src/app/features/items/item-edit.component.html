@@ -1,0 +1,224 @@
+<div class="page page-mid">
+  <div *ngIf="loading" class="panel panel-pad">
+    <p class="small" role="status" aria-live="polite">Memuat data barang...</p>
+  </div>
+
+  <ng-container *ngIf="!loading && loadError">
+    <div class="page-head">
+      <div>
+        <p class="kicker">Ubah barang</p>
+        <h1>Barang tidak ditemukan</h1>
+      </div>
+    </div>
+    <div class="empty">
+      <p class="empty-title">{{ loadError }}</p>
+      <p class="empty-body">Periksa kembali tautan barang atau buka katalog organisasi aktif.</p>
+      <a class="btn-primary" routerLink="/katalog">Kembali ke katalog</a>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!loading && !loadError && item && !canEdit">
+    <div class="page-head">
+      <div>
+        <p class="kicker">Ubah barang</p>
+        <h1>Akses terbatas</h1>
+      </div>
+    </div>
+    <app-alert
+      kind="warning"
+      title="Tidak memiliki izin"
+      message="Hanya pemilik barang atau pengurus organisasi yang bisa mengubah data ini."
+    />
+    <div class="btn-row" style="margin-top:1rem">
+      <a class="btn-secondary" [routerLink]="['/katalog', item.id]">Lihat rincian</a>
+      <a class="btn-secondary" routerLink="/katalog">Kembali ke katalog</a>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!loading && !loadError && item && canEdit">
+    <div class="page-head split">
+      <div>
+        <p class="kicker">Pemilik · UC-PM-03</p>
+        <h1>Ubah data barang</h1>
+        <p class="lede">{{ form.name || item.name }} · <span class="mono">{{ item.code }}</span></p>
+      </div>
+      <div class="head-actions">
+        <a class="btn-secondary" [routerLink]="['/katalog', item.id]">Lihat rincian</a>
+        <a class="btn-secondary" routerLink="/katalog">Katalog</a>
+      </div>
+    </div>
+
+    <app-alert
+      kind="info"
+      title="Penyimpanan perubahan sementara di peramban"
+      message="Endpoint pembaruan barang (PUT /api/v1/items/:id) belum tersedia pada server saat ini. Perubahan data dan status barang disimpan secara lokal di peramban ini dan langsung tampil di katalog serta detail barang."
+    />
+
+    <app-alert
+      *ngIf="errorMessage"
+      kind="error"
+      title="Perubahan belum disimpan"
+      [message]="errorMessage"
+      style="display:block;margin-top:.9rem"
+    />
+
+    <app-alert
+      *ngIf="successMessage"
+      kind="success"
+      title="Data barang diperbarui"
+      [message]="successMessage"
+      style="display:block;margin-top:.9rem"
+    />
+
+    <div class="panel panel-pad" style="margin-top:1rem">
+      <form (ngSubmit)="onSave()" novalidate>
+        <div class="field">
+          <label class="label" for="edit-item-name">Nama barang</label>
+          <input
+            class="form-input"
+            id="edit-item-name"
+            name="name"
+            type="text"
+            required
+            [(ngModel)]="form.name"
+          />
+          <p class="hint">Tulis merek dan ukuran bila penting, misalnya "Bor listrik impact 13 mm".</p>
+        </div>
+
+        <div class="form-grid two">
+          <div class="field">
+            <label class="label" for="edit-item-days">Maksimal hari pinjam (1–14)</label>
+            <input
+              class="form-input"
+              id="edit-item-days"
+              name="maxDays"
+              type="number"
+              min="1"
+              max="14"
+              required
+              [(ngModel)]="form.maxDays"
+            />
+          </div>
+
+          <div class="field">
+            <label class="label" for="edit-item-status">Status alat</label>
+            <select
+              class="form-input"
+              id="edit-item-status"
+              name="status"
+              [(ngModel)]="form.status"
+            >
+              <option *ngFor="let opt of statusOptions" [value]="opt.value">
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="edit-item-location">Lokasi pengambilan</label>
+          <input
+            class="form-input"
+            id="edit-item-location"
+            name="location"
+            type="text"
+            required
+            [(ngModel)]="form.location"
+          />
+        </div>
+
+        <div class="field">
+          <label class="label" for="edit-item-description">Deskripsi singkat</label>
+          <textarea
+            class="form-input"
+            id="edit-item-description"
+            name="description"
+            rows="3"
+            required
+            [(ngModel)]="form.description"
+          ></textarea>
+        </div>
+
+        <div class="field">
+          <label class="label" for="edit-item-contents">Kelengkapan</label>
+          <textarea
+            class="form-input"
+            id="edit-item-contents"
+            name="contents"
+            rows="4"
+            placeholder="Satu item per baris"
+            [(ngModel)]="form.contents"
+          ></textarea>
+          <p class="hint">Satu baris untuk setiap bagian, misalnya "1 kabel pengisi daya".</p>
+        </div>
+
+        <div class="field">
+          <label class="label" for="edit-item-instructions">Catatan pemakaian</label>
+          <textarea
+            class="form-input"
+            id="edit-item-instructions"
+            name="instructions"
+            rows="3"
+            maxlength="250"
+            required
+            [(ngModel)]="form.instructions"
+          ></textarea>
+          <p class="hint">Maksimal 250 karakter ({{ form.instructions.length }}/250).</p>
+        </div>
+
+        <div class="field">
+          <label class="label" for="edit-item-image">Foto contoh</label>
+          <div class="image-picker-row">
+            <select
+              class="form-input"
+              id="edit-item-image"
+              name="image"
+              [(ngModel)]="form.image"
+            >
+              <option *ngFor="let opt of imageOptions" [value]="opt[0]">{{ opt[1] }}</option>
+            </select>
+            <div class="preview-thumb">
+              <img [src]="previewImage" [alt]="'Pratinjau ' + (form.name || 'barang')" />
+            </div>
+          </div>
+          <p class="hint">Memakai aset foto contoh lokal. Unggahan foto kustom ke server belum tersedia untuk edit barang.</p>
+        </div>
+
+        <div class="btn-row form-submit">
+          <button class="btn-primary" type="submit">Simpan perubahan</button>
+          <a class="btn-secondary" [routerLink]="['/katalog', item.id]">Batal</a>
+        </div>
+      </form>
+    </div>
+
+    <div class="well" style="margin-top:1rem">
+      <div class="item-head" style="margin-bottom:.35rem">
+        <p class="small strong" style="margin:0">Menarik barang dari katalog</p>
+        <app-status-badge kind="item" [status]="currentStatus" />
+      </div>
+      <p class="small muted" style="margin:0">
+        Barang yang sedang dipinjam tidak bisa ditarik. Setelah dikembalikan, Anda bisa menariknya sementara dari katalog.
+      </p>
+      <div class="btn-row" style="margin-top:.75rem">
+        <button
+          *ngIf="currentStatus === 'DIARSIPKAN'; else archiveButton"
+          class="btn-secondary"
+          type="button"
+          (click)="onRestoreItem()"
+        >
+          Tayangkan lagi
+        </button>
+        <ng-template #archiveButton>
+          <button
+            class="btn-danger"
+            type="button"
+            [disabled]="currentStatus === 'DIPINJAM'"
+            (click)="onArchiveItem()"
+          >
+            Tarik dari katalog
+          </button>
+        </ng-template>
+      </div>
+    </div>
+  </ng-container>
+</div>

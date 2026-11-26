@@ -4,7 +4,8 @@ import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Item } from '../../core/models';
-import { ItemService } from '../../core/services/item.service';
+import { AuthService } from '../../core/services/auth.service';
+import { ItemService, normalizeItemImagePath } from '../../core/services/item.service';
 import { AlertComponent } from '../../shared/alert/alert.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 
@@ -32,62 +33,119 @@ import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.com
       <button *ngIf="errorMessage && errorStatus !== 401 && errorStatus !== 403 && errorStatus !== 404"
         type="button" class="retry-button" (click)="loadItem(itemId)">Coba lagi</button>
 
-      <article *ngIf="item && !loading" class="detail-layout">
-        <div class="detail-photo">
-          <img
-            [src]="itemImage"
-            [alt]="'Foto ' + item.name"
-            width="800"
-            height="600"
-            fetchpriority="high"
-            (error)="onImageError()"
-          />
-        </div>
+      <ng-container *ngIf="item && !loading">
+        <article class="detail-layout">
+          <div class="detail-photo">
+            <img
+              [src]="itemImage"
+              [alt]="'Foto ' + item.name"
+              width="800"
+              height="600"
+              fetchpriority="high"
+              (error)="onImageError()"
+            />
+          </div>
 
-        <section class="detail-content" aria-labelledby="item-title">
-          <p class="item-code">{{ item.code }}</p>
-          <h1 id="item-title">{{ item.name }}</h1>
-          <app-status-badge kind="item" [status]="item.status" />
-          <p class="description">{{ item.description }}</p>
+          <section class="detail-content" aria-labelledby="item-title">
+            <p class="item-code">{{ item.code }}</p>
+            <h1 id="item-title">{{ item.name }}</h1>
+            <app-status-badge kind="item" [status]="item.status" />
+            <p class="description">{{ item.description }}</p>
 
-          <dl class="item-facts">
-            <div>
-              <dt>Organisasi</dt>
-              <dd>{{ item.organization?.name || 'Tidak dicantumkan' }}</dd>
-            </div>
-            <div>
-              <dt>Lokasi</dt>
-              <dd>{{ item.location || 'Belum dicantumkan' }}</dd>
-            </div>
-            <div>
-              <dt>Maksimal masa pinjam</dt>
-              <dd>{{ item.maxDays }} hari</dd>
-            </div>
-            <div>
-              <dt>Kelengkapan</dt>
-              <dd *ngIf="contentsList.length; else noContents">
-                <ul>
-                  <li *ngFor="let content of contentsList">{{ content }}</li>
-                </ul>
-              </dd>
-              <ng-template #noContents><dd>Belum dicantumkan</dd></ng-template>
-            </div>
-            <div>
-              <dt>Petunjuk penggunaan</dt>
-              <dd>{{ item.instructions || 'Belum dicantumkan' }}</dd>
-            </div>
-            <div *ngIf="item.owner?.fullName">
-              <dt>Pemilik</dt>
-              <dd>{{ item.owner?.fullName }}</dd>
-            </div>
-          </dl>
+            <dl class="item-facts">
+              <div>
+                <dt>Organisasi</dt>
+                <dd>{{ item.organization?.name || 'Tidak dicantumkan' }}</dd>
+              </div>
+              <div>
+                <dt>Lokasi pengambilan</dt>
+                <dd>{{ item.location || 'Belum dicantumkan' }}</dd>
+              </div>
+              <div>
+                <dt>Maksimal masa pinjam</dt>
+                <dd>{{ item.maxDays }} hari</dd>
+              </div>
+              <div>
+                <dt>Kelengkapan</dt>
+                <dd *ngIf="contentsList.length; else noContents">
+                  <ul>
+                    <li *ngFor="let content of contentsList">{{ content }}</li>
+                  </ul>
+                </dd>
+                <ng-template #noContents><dd>Belum dicantumkan</dd></ng-template>
+              </div>
+              <div>
+                <dt>Ketentuan &amp; instruksi pemakaian</dt>
+                <dd>{{ item.instructions || 'Belum dicantumkan' }}</dd>
+              </div>
+              <div *ngIf="item.owner?.fullName">
+                <dt>Pemilik</dt>
+                <dd>{{ item.owner?.fullName }}</dd>
+              </div>
+            </dl>
 
-          <a *ngIf="ownerWhatsappUrl" class="action-link" [href]="ownerWhatsappUrl" target="_blank" rel="noopener noreferrer">
-            Hubungi pemilik
-          </a>
-          <p class="feature-note">Pengajuan pinjaman belum tersedia saat ini.</p>
+            <div class="btn-row detail-actions">
+              <a
+                *ngIf="canRequestLoan"
+                class="btn-primary"
+                routerLink="/form-pengajuan"
+                [queryParams]="{ id: item.id }"
+              >
+                Ajukan pinjaman
+              </a>
+              <a *ngIf="isOwner" class="btn-secondary" routerLink="/barang-saya">
+                Kelola di Barang Saya
+              </a>
+              <a *ngIf="canEditItem" class="btn-secondary" [routerLink]="['/edit-barang', item.id]">
+                Ubah data barang
+              </a>
+              <a *ngIf="ownerWhatsappUrl" class="action-link" [href]="ownerWhatsappUrl" target="_blank" rel="noopener noreferrer">
+                Hubungi pemilik
+              </a>
+            </div>
+            <p *ngIf="!canRequestLoan && !isOwner && item.status !== 'TERSEDIA'" class="feature-note">
+              Barang ini sedang tidak tersedia untuk dipinjam saat ini.
+            </p>
+          </section>
+        </article>
+
+        <section class="section-rule">
+          <div class="section-head">
+            <h2>Ketentuan peminjaman</h2>
+            <p>Ringkasan aturan sebelum mengajukan peminjaman alat ini.</p>
+          </div>
+          <div class="panel panel-pad">
+            <ul class="small" style="margin:0;padding-left:1.25rem;display:grid;gap:.35rem">
+              <li>Pengajuan diperiksa pemilik barang atau pengurus organisasi.</li>
+              <li>Pinjam paling lama {{ item.maxDays }} hari sejak tanggal mulai.</li>
+              <li>Pengembalian dikonfirmasi pemilik setelah kondisi alat diperiksa.</li>
+              <li>{{ item.instructions }}</li>
+            </ul>
+          </div>
         </section>
-      </article>
+
+        <section class="section-rule">
+          <div class="section-head">
+            <h2>Riwayat pinjaman terakhir</h2>
+            <p>Catatan sirkulasi membantu pemilik dan pengurus melihat kondisi alat.</p>
+          </div>
+          <div *ngIf="item.loans && item.loans.length > 0; else noLoanHistory" class="list">
+            <div class="list-item row" *ngFor="let loan of item.loans">
+              <div>
+                <span class="cell-main">{{ loan.borrower?.fullName || 'Anggota' }}</span>
+                <span class="cell-sub">{{ formatDate(loan.startDate) }} – {{ formatDate(loan.endDate) }}</span>
+              </div>
+              <app-status-badge kind="loan" [status]="loan.status" perspective="pemilik" />
+            </div>
+          </div>
+          <ng-template #noLoanHistory>
+            <div class="empty">
+              <p class="empty-title">Belum ada riwayat pinjaman</p>
+              <p class="empty-body">Alat ini belum memiliki riwayat transaksi pinjaman sebelumnya.</p>
+            </div>
+          </ng-template>
+        </section>
+      </ng-container>
     </div>
   `,
   styles: [`
@@ -164,12 +222,6 @@ import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.com
       margin: 0;
       padding-left: 1.25rem;
     }
-    .feature-note {
-      margin: 1.5rem 0 0;
-      padding-top: 1rem;
-      border-top: 1px solid var(--color-rule-2);
-      color: var(--color-muted);
-    }
     .loading-state {
       padding: 1rem 0;
       color: var(--color-ink);
@@ -186,7 +238,7 @@ import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.com
     }
     a:focus-visible,
     button:focus-visible {
-      outline: 2px solid var(--color-focus);
+      outline: 3px solid var(--color-focus);
       outline-offset: 2px;
     }
     @media (max-width: 700px) {
@@ -203,6 +255,7 @@ import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.com
 })
 export class ItemDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
+  private readonly authService = inject(AuthService);
   private readonly itemService = inject(ItemService);
   private routeSubscription?: Subscription;
   private itemRequest?: Subscription;
@@ -214,11 +267,32 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
   errorMessage = '';
   errorStatus = 0;
 
+  get isOwner(): boolean {
+    const userId = this.authService.currentUser()?.id;
+    return !!this.item && !!userId && this.item.ownerId === userId;
+  }
+
+  get canRequestLoan(): boolean {
+    return (
+      !!this.item &&
+      this.item.status === 'TERSEDIA' &&
+      !this.itemService.isLocallyArchived(this.item.id) &&
+      !this.isOwner &&
+      this.authService.activeMembership()?.status === 'TERVERIFIKASI'
+    );
+  }
+
   ngOnInit(): void {
     this.routeSubscription = this.route.paramMap.subscribe(params => {
       this.itemId = params.get('id') || '';
       this.loadItem(this.itemId);
     });
+  }
+
+  get canEditItem(): boolean {
+    if (!this.item) return false;
+    const me = this.authService.currentUser();
+    return (!!me && this.item.ownerId === me.id) || this.authService.isAdmin();
   }
 
   get contentsList(): string[] {
@@ -247,6 +321,17 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
     return `https://wa.me/${internationalNumber}`;
   }
 
+  formatDate(value?: string): string {
+    if (!value) return '—';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+
   loadItem(id: string): void {
     this.itemRequest?.unsubscribe();
     this.item = null;
@@ -260,11 +345,9 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.itemRequest = this.itemService.getItemById(id).subscribe({
       next: response => {
-        this.item = response.item;
-        const source = response.item.image || response.item.imageUrl;
-        this.itemImage = !source || source === 'assets/placeholder-item.svg'
-          ? '/img/placeholder-item.svg'
-          : source.startsWith('assets/') ? `/${source.slice('assets/'.length)}` : source;
+        const effective = this.itemService.getEffectiveItem(response.item);
+        this.item = effective;
+        this.itemImage = normalizeItemImagePath(effective.image || effective.imageUrl);
         this.loading = false;
       },
       error: (error: HttpErrorResponse) => {

@@ -1,20 +1,22 @@
-import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, HostListener, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { AlertComponent } from '../../shared/alert/alert.component';
+import { OtpModalComponent, OtpSubmitPayload } from '../../shared/otp-modal/otp-modal.component';
+import { ToastService } from '../../shared/toast/toast.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, AlertComponent],
+  imports: [CommonModule, FormsModule, RouterLink, AlertComponent, OtpModalComponent],
   template: `
     <div class="auth-wrapper">
       <div class="auth-card">
         <div class="brand-badge">SARGA</div>
-        <h2 class="auth-title">Masuk ke Akun</h2>
-        <p class="auth-subtitle">Sistem inventaris alat dan pencatatan peminjaman bersama</p>
+        <h1 class="auth-title">Masuk ke akun SARGA</h1>
+        <p class="auth-subtitle">Gunakan nomor WhatsApp yang tercatat pada data anggota organisasi.</p>
 
         <form (ngSubmit)="onSubmit()" class="auth-form">
           <app-alert
@@ -25,27 +27,39 @@ import { AlertComponent } from '../../shared/alert/alert.component';
           ></app-alert>
 
           <div class="form-group">
-            <label for="waNumber">Nomor WhatsApp</label>
-            <input 
-              id="waNumber" 
-              type="text" 
-              [(ngModel)]="waNumber" 
-              name="waNumber" 
-              required 
-              placeholder="Contoh: 081234567890" 
+            <label for="waNumber">Nomor WhatsApp terdaftar</label>
+            <input
+              id="waNumber"
+              type="tel"
+              inputmode="tel"
+              autocomplete="tel"
+              [(ngModel)]="waNumber"
+              name="waNumber"
+              required
+              placeholder="Contoh: 081234567890"
               class="form-control"
             />
           </div>
 
           <div class="form-group">
-            <label for="password">Kata Sandi</label>
-            <input 
-              id="password" 
-              type="password" 
-              [(ngModel)]="password" 
-              name="password" 
-              required 
-              placeholder="••••••••" 
+            <div class="label-row">
+              <label for="password" style="margin-bottom:0">Kata sandi</label>
+              <button
+                type="button"
+                class="forgot-link"
+                (click)="openForgotModal($event)"
+              >
+                Lupa kata sandi?
+              </button>
+            </div>
+            <input
+              id="password"
+              type="password"
+              autocomplete="current-password"
+              [(ngModel)]="password"
+              name="password"
+              required
+              placeholder="••••••••"
               class="form-control"
             />
           </div>
@@ -53,19 +67,72 @@ import { AlertComponent } from '../../shared/alert/alert.component';
           <button type="submit" [disabled]="loading" class="btn btn-primary btn-block">
             {{ loading ? 'Memproses...' : 'Masuk' }}
           </button>
+          <button
+            type="button"
+            (click)="openOtpModal()"
+            class="btn btn-secondary btn-block otp-trigger"
+          >
+            Masuk dengan kode OTP
+          </button>
         </form>
+
+        <p class="auth-nav-note">
+          Belum punya akun?
+          <a routerLink="/auth/register" class="link">Daftar dengan kode undangan pengurus</a>.
+          Sudah mendaftar?
+          <a routerLink="/status-akun" class="link">Lihat status akun</a>.
+        </p>
 
         <div class="demo-hints">
           <p class="hint-title">Akun Uji Coba Demo:</p>
-          <div class="hint-account" (click)="fillDemo('081234567890', 'Admin123!')">
-            <span>👑 Pengurus: 081234567890 (Admin123!)</span>
-          </div>
-          <div class="hint-account" (click)="fillDemo('081299998888', 'Anggota123!')">
-            <span>👤 Anggota: 081299998888 (Anggota123!)</span>
-          </div>
+          <button type="button" class="hint-account" (click)="fillDemo('081234567890', 'Admin123!')">
+            👑 Pengurus: 081234567890 (Admin123!)
+          </button>
+          <button type="button" class="hint-account" (click)="fillDemo('081299998888', 'Anggota123!')">
+            👤 Anggota: 081299998888 (Anggota123!)
+          </button>
         </div>
       </div>
     </div>
+
+    <div *ngIf="forgotModalOpen" class="modal-backdrop" (click)="onBackdropClick($event)">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="forgot-pw-title">
+        <div class="modal-head">
+          <h2 id="forgot-pw-title">Lupa kata sandi</h2>
+          <button
+            type="button"
+            class="modal-close"
+            aria-label="Tutup dialog"
+            (click)="closeForgotModal()"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="small">
+            Pada sistem nyata, tautan pengaturan ulang dikirim ke nomor WhatsApp terdaftar atau diperiksa pengurus organisasi.
+          </p>
+          <div class="well" style="margin-top:.9rem">
+            <p class="small strong" style="margin:0">Untuk akun demo seed</p>
+            <p class="small muted" style="margin:.25rem 0 0">
+              Akun pengurus memakai <span class="mono">Admin123!</span> dan akun anggota memakai <span class="mono">Anggota123!</span>.
+            </p>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeForgotModal()">Tutup</button>
+        </div>
+      </div>
+    </div>
+
+    <app-otp-modal
+      [open]="otpModalOpen"
+      [initialWa]="waNumber || '081298765432'"
+      [serverMessage]="otpServerMessage"
+      [serverMessageKind]="otpServerKind"
+      (closed)="closeOtpModal()"
+      (otpSubmit)="onOtpSubmit($event)"
+    />
   `,
   styles: [`
     .auth-wrapper {
@@ -79,9 +146,9 @@ import { AlertComponent } from '../../shared/alert/alert.component';
       background: #ffffff;
       border: 1px solid var(--color-rule);
       border-radius: var(--radius-card);
-      padding: 2.5rem 2rem;
+      padding: 2rem 1.75rem;
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       box-shadow: var(--shadow-subtle);
     }
     .brand-badge {
@@ -89,7 +156,7 @@ import { AlertComponent } from '../../shared/alert/alert.component';
       font-weight: 700;
       font-size: 0.85rem;
       letter-spacing: 0.1em;
-      color: var(--color-accent);
+      color: var(--color-accent-soft-ink);
       background: var(--color-accent-soft);
       padding: 0.2rem 0.6rem;
       border-radius: var(--radius-pill);
@@ -102,12 +169,29 @@ import { AlertComponent } from '../../shared/alert/alert.component';
       margin: 0 0 0.25rem 0;
     }
     .auth-subtitle {
-      font-size: 0.875rem;
+      font-size: 0.88rem;
       color: var(--color-muted);
       margin: 0 0 1.5rem 0;
     }
     .form-group {
       margin-bottom: 1.25rem;
+    }
+    .label-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.35rem;
+    }
+    .forgot-link {
+      background: none;
+      border: 0;
+      padding: 0.35rem 0;
+      min-height: 36px;
+      color: var(--color-accent-soft-ink);
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: underline;
     }
     .auth-form app-alert {
       display: block;
@@ -122,40 +206,59 @@ import { AlertComponent } from '../../shared/alert/alert.component';
     }
     .form-control {
       width: 100%;
-      padding: 0.75rem 1rem;
-      border: 1px solid var(--color-rule);
+      min-height: 44px;
+      padding: 0.7rem 0.9rem;
+      border: 1px solid var(--color-muted-light);
       border-radius: var(--radius-input);
       font-size: 0.95rem;
-      outline: none;
     }
-    .form-control:focus {
-      border-color: var(--color-focus);
-      box-shadow: 0 0 0 3px var(--color-focus-ring);
+    .form-control:focus-visible,
+    .forgot-link:focus-visible,
+    .hint-account:focus-visible {
+      outline: 3px solid var(--color-focus);
+      outline-offset: 2px;
     }
-    .btn-block {
-      width: 100%;
-      padding: 0.75rem;
-      margin-top: 0.5rem;
+    .register-hint {
+      margin: 1rem 0 0;
+      color: var(--color-muted);
+      font-size: 0.84rem;
+    }
+    .otp-trigger {
+      margin-top: 0.55rem;
+    }
+    .auth-nav-note {
+      margin-top: 1rem;
+      font-size: 0.82rem;
+      color: var(--color-muted);
+      text-align: center;
+    }
+    .auth-nav-note .link {
+      color: var(--color-accent);
+      text-decoration: underline;
     }
     .demo-hints {
-      margin-top: 2rem;
-      padding-top: 1.25rem;
+      margin-top: 1.5rem;
+      padding-top: 1.1rem;
       border-top: 1px dashed var(--color-rule);
-      font-size: 0.8rem;
+      font-size: 0.82rem;
     }
     .hint-title {
       color: var(--color-muted);
       font-weight: 600;
-      margin-bottom: 0.5rem;
+      margin: 0 0 0.5rem;
     }
     .hint-account {
-      padding: 0.35rem 0.6rem;
+      display: block;
+      width: 100%;
+      text-align: left;
+      min-height: 44px;
+      padding: 0.45rem 0.75rem;
+      border: 1px solid var(--color-rule);
       background: var(--color-paper-2);
-      border-radius: 6px;
-      margin-bottom: 0.35rem;
-      cursor: pointer;
+      border-radius: 8px;
+      margin-bottom: 0.4rem;
       color: var(--color-ink-2);
-      transition: background 0.15s ease;
+      font-size: 0.82rem;
     }
     .hint-account:hover {
       background: var(--color-paper-3);
@@ -165,11 +268,25 @@ import { AlertComponent } from '../../shared/alert/alert.component';
 export class LoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private toastService = inject(ToastService);
+  private returnFocusEl: HTMLElement | null = null;
 
   waNumber = '';
   password = '';
   loading = false;
   errorMessage = '';
+  forgotModalOpen = false;
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.forgotModalOpen) {
+      this.closeForgotModal();
+    }
+  }
+
+  otpModalOpen = false;
+  otpServerMessage = '';
+  otpServerKind: 'info' | 'warning' | 'error' = 'info';
 
   onSubmit(): void {
     if (!this.waNumber || !this.password) {
@@ -195,5 +312,45 @@ export class LoginComponent {
   fillDemo(wa: string, pass: string): void {
     this.waNumber = wa;
     this.password = pass;
+  }
+
+  openForgotModal(event: Event): void {
+    this.returnFocusEl = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+    this.forgotModalOpen = true;
+  }
+
+  onBackdropClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeForgotModal();
+    }
+  }
+
+  closeForgotModal(): void {
+    this.forgotModalOpen = false;
+    const el = this.returnFocusEl;
+    this.returnFocusEl = null;
+    if (el) setTimeout(() => el.focus());
+  }
+
+  openOtpModal(): void {
+    this.otpServerMessage = '';
+    this.otpServerKind = 'info';
+    this.otpModalOpen = true;
+  }
+
+  closeOtpModal(): void {
+    this.otpModalOpen = false;
+    this.otpServerMessage = '';
+  }
+
+  onOtpSubmit(payload: OtpSubmitPayload): void {
+    this.waNumber = payload.waNumber;
+    this.otpServerKind = 'warning';
+    this.otpServerMessage =
+      'Layanan OTP WhatsApp di server segera hadir (API belum tersedia). Silakan gunakan kata sandi pada formulir Masuk.';
+    this.toastService.show(
+      'Layanan OTP WhatsApp segera hadir. Gunakan kata sandi untuk masuk.',
+      'info'
+    );
   }
 }
